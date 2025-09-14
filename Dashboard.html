@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cloud Dashboard - AI Image Generator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      color: #2c3e50;
+      min-height: 100vh;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; position: relative; }
+
+    /* Header */
+    header {
+      padding: 18px 0;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      position: sticky; top: 0; z-index: 60;
+    }
+    nav { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .logo { font-size: 26px; font-weight: 800; color:#2c3e50; text-decoration:none; letter-spacing: .6px; }
+    .nav-buttons { display:flex; gap:12px; align-items:center; }
+    .btn { padding:10px 18px; border-radius:10px; font-weight:600; border: none; cursor:pointer; font-size:14px; transition: all 0.3s ease; }
+    .btn-outline { background:transparent; border:1px solid rgba(44,62,80,0.12); color:#2c3e50; }
+    .btn-solid {
+      background: linear-gradient(135deg,#2c3e50,#34495e);
+      color: #fff;
+      box-shadow: 0 8px 25px rgba(44,62,80,0.08);
+    }
+    .btn:hover { transform: translateY(-1px); }
+
+    /* Floating background elements */
+    .floating-element {
+      position: absolute;
+      border-radius: 50%;
+      background: linear-gradient(45deg, rgba(52,152,219,0.10), rgba(155,89,182,0.10));
+      pointer-events: none;
+      filter: blur(0.5px);
+      animation: float 6s ease-in-out infinite;
+      z-index: 1;
+    }
+    .floating-element.f1 { width: 80px; height:80px; top: 14%; left: 6%; animation-delay: 0s; }
+    .floating-element.f2 { width: 60px; height:60px; top: 62%; right: 12%; animation-delay: 2s; }
+    .floating-element.f3 { width: 120px; height:120px; bottom: 12%; left: 18%; animation-delay: 4s; }
+    @keyframes float {
+      0%,100% { transform: translateY(0) rotate(0deg); opacity: 0.75; }
+      50% { transform: translateY(-18px) rotate(180deg); opacity: 1; }
+    }
+
+    /* Main Content */
+    .main-content { 
+      padding: 40px 0; 
+      position: relative; 
+      z-index: 10; 
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .page-header h1 {
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 800;
+      color: #2c3e50;
+      margin-bottom: 8px;
+    }
+    
+    .page-header p {
+      color: #6f7a83;
+      font-size: 16px;
+    }
+
+    /* Generator Section */
+    .generator-section {
+      background: rgba(255,255,255,0.95);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.07);
+      backdrop-filter: blur(10px);
+    }
+
+    /* API Configuration */
+    .api-section {
+      background: #f8f9fa;
+      padding: 25px;
+      border-radius: 15px;
+      margin-bottom: 30px;
+      border-left: 4px solid #2c3e50;
+    }
+
+    .api-section h3 {
+      margin-bottom: 15px;
+      color: #2c3e50;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #27ae60;
+      transition: background 0.3s ease;
+    }
+
+    /* Form Elements */
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 14px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e1e5e9;
+      border-radius: 10px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      font-family: inherit;
+    }
+
+    input[type="file"] {
+      padding: 20px;
+      border: 2px dashed #e1e5e9;
+      background: #f8f9fa;
+      cursor: pointer;
+    }
+
+    input[type="file"]:hover {
+      border-color: #2c3e50;
+      background: #ecf0f1;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #2c3e50;
+      box-shadow: 0 0 0 3px rgba(44,62,80,0.1);
+    }
+
+    .image-preview {
+      margin-top: 15px;
+      display: none;
+      text-align: center;
+    }
+
+    .image-preview img {
+      max-width: 200px;
+      max-height: 200px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 2px solid #e1e5e9;
+    }
+
+    /* Advanced Options */
+    .advanced-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    /* Generate Button */
+    .generate-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #2c3e50, #34495e);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 20px;
+    }
+
+    .generate-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(44,62,80,0.3);
+    }
+
+    .generate-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Loading */
+    .loading {
+      display: none;
+      text-align: center;
+      margin: 30px 0;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 12px;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #2c3e50;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #e9ecef;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(135deg, #2c3e50, #34495e);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Messages */
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 15px;
+      border-radius: 10px;
+      margin: 20px 0;
+      border-left: 4px solid #e74c3c;
+    }
+
+    .success-message {
+      background: #d4edda;
+      color: #155724;
+      padding: 15px;
+      border-radius: 10px;
+      margin: 20px 0;
+      border-left: 4px solid #27ae60;
+    }
+
+    /* Gallery */
+    .result-section {
+      margin-top: 40px;
+    }
+
+    .image-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 26px;
+      margin-top: 20px;
+    }
+
+    .image-card {
+      background: #ffffff;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.07);
+      transition: transform .36s, box-shadow .36s;
+    }
+
+    .image-card:hover {
+      transform: translateY(-10px) scale(1.02);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.12);
+    }
+
+    .image-card img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      display: block;
+    }
+
+    .image-info {
+      padding: 16px 18px;
+    }
+
+    .image-prompt {
+      font-size: 13px;
+      color: #6f7a83;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    .image-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .action-btn {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .download-btn {
+      background: #27ae60;
+      color: white;
+    }
+
+    .download-btn:hover {
+      background: #229954;
+      transform: translateY(-1px);
+    }
+
+    .share-btn {
+      background: #95a5a6;
+      color: white;
+    }
+
+    .share-btn:hover {
+      background: #7f8c8d;
+      transform: translateY(-1px);
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 60px;
+      background: rgba(44,62,80,0.04);
+      padding: 28px 0;
+      text-align: center;
+      color: #4a5561;
+      font-size: 14px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 15px;
+      }
+      
+      .generator-section {
+        padding: 20px;
+        margin: 10px 0;
+      }
+      
+      .advanced-options {
+        grid-template-columns: 1fr;
+      }
+      
+      .image-gallery {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Floating elements -->
+  <div class="floating-element f1"></div>
+  <div class="floating-element f2"></div>
+  <div class="floating-element f3"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="container">
+      <nav>
+        <a class="logo" href="index.html">cloud</a>
+        <div class="nav-buttons">
+          <button class="btn btn-outline" onclick="window.location.href='index.html'">Back to Home</button>
+          <button class="btn btn-solid">Account</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main-content">
+    <div class="container">
+      <div class="page-header">
+        <h1>Paper Art Transformer</h1>
+        <p>Transform your photos into expressive paper art style</p>
+      </div>
+
+      <div class="generator-section">
+        <div class="api-section">
+          <h3>
+            <span class="status-indicator"></span>
+            Paper Art Generator
+          </h3>
+          <p style="color: #6f7a83; font-size: 14px; margin-bottom: 20px;">Upload an image to transform it into expressive paper art with vibrant colors and abstract elements</p>
+        </div>
+
+        <div class="input-group">
+          <label for="imageUpload">Upload Your Image:</label>
+          <input type="file" id="imageUpload" accept="image/*" />
+          <div id="imagePreview" class="image-preview">
+            <img id="previewImg" alt="Image preview">
+          </div>
+        </div>
+
+        <div class="advanced-options">
+          <div class="input-group">
+            <label for="artStyle">Art Style:</label>
+            <select id="artStyle">
+              <option value="paper" selected>Paper Art Style</option>
+              <!-- 
+              TO ADD MORE STYLES: Add new options here
+              Example:
+              <option value="watercolor">Watercolor Style</option>
+              <option value="sketch">Pencil Sketch Style</option>
+              <option value="oil">Oil Painting Style</option>
+              <option value="digital">Digital Art Style</option>
+              -->
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label for="styleIntensity">Style Intensity:</label>
+            <select id="styleIntensity">
+              <option value="subtle">Subtle</option>
+              <option value="moderate" selected>Moderate</option>
+              <option value="strong">Strong</option>
+              <option value="extreme">Extreme</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label for="aspectRatio">Device & Aspect Ratio:</label>
+            <select id="aspectRatio">
+              <!-- Mobile Devices -->
+              <option value="9:16">Mobile Portrait (9:16) - 1080x1920</option>
+              <option value="16:9">Mobile Landscape (16:9) - 1920x1080</option>
+              <option value="9:18">Mobile Long (9:18) - 1080x2160</option>
+              
+              <!-- Tablets -->
+              <option value="3:4">Tablet Portrait (3:4) - 1536x2048</option>
+              <option value="4:3">Tablet Landscape (4:3) - 2048x1536</option>
+              
+              <!-- Desktop/Laptop -->
+              <option value="16:10">Desktop (16:10) - 1920x1200</option>
+              <option value="21:9">Ultrawide (21:9) - 2560x1080</option>
+              <option value="1:1" selected>Square (1:1) - 1024x1024</option>
+              
+              <!-- 4K Resolutions -->
+              <option value="16:9-4k">4K Desktop (16:9) - 3840x2160</option>
+              <option value="21:9-4k">4K Ultrawide (21:9) - 5120x2160</option>
+              <option value="9:16-4k">4K Mobile (9:16) - 2160x3840</option>
+              
+              <!-- Watch & Small Devices -->
+              <option value="1:1-watch">Watch Square - 312x312</option>
+              <option value="watch-round">Watch Round (1:1) - 360x360</option>
+              
+              <!-- Social Media -->
+              <option value="instagram">Instagram Square - 1080x1080</option>
+              <option value="instagram-story">Instagram Story - 1080x1920</option>
+              <option value="youtube-thumb">YouTube Thumbnail - 1280x720</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="generate-btn" onclick="generateImages()" id="generateBtn">
+          Transform to Paper Art
+        </button>
+
+        <div class="loading" id="loading">
+          <div class="spinner"></div>
+          <p id="loadingText">Analyzing your image and transforming to paper art...</p>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+
+        <div id="messageContainer"></div>
+      </div>
+
+      <div class="result-section">
+        <div class="image-gallery" id="imageGallery"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      © <strong>Cloud</strong> — Beautiful experiences in the cloud. All rights reserved.
+    </div>
+  </footer>
+
+  <script>
+    // Replace with your actual Gemini API key
+    const GEMINI_API_KEY = 'AIzaSyDo3dx_VsAAS3HpiSv9Hw4XITebHufA-QM';
+    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+    
+    let uploadedImageData = null;
+    let uploadedImageBase64 = null;
+    let generatedImages = [];
+
+    // Initialize the application
+    document.addEventListener('DOMContentLoaded', function() {
+      setupImageUpload();
+    });
+
+    function setupImageUpload() {
+      const imageUpload = document.getElementById('imageUpload');
+      const imagePreview = document.getElementById('imagePreview');
+      const previewImg = document.getElementById('previewImg');
+      
+      imageUpload.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            uploadedImageData = e.target.result;
+            uploadedImageBase64 = e.target.result.split(',')[1]; // Remove data URL prefix
+            previewImg.src = e.target.result;
+            imagePreview.style.display = 'block';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      // Drag and drop functionality
+      imageUpload.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#2c3e50';
+        this.style.backgroundColor = '#ecf0f1';
+      });
+
+      imageUpload.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#e1e5e9';
+        this.style.backgroundColor = '#f8f9fa';
+      });
+
+      imageUpload.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#e1e5e9';
+        this.style.backgroundColor = '#f8f9fa';
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          this.files = files;
+          const event = new Event('change', { bubbles: true });
+          this.dispatchEvent(event);
+        }
+      });
+    }
+
+    async function generateImages() {
+      if (!uploadedImageData || !uploadedImageBase64) {
+        showMessage('Please upload an image first', 'error');
+        return;
+      }
+
+      if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
+        showMessage('Please configure your Gemini API key in the code', 'error');
+        return;
+      }
+
+      setLoading(true);
+      clearMessages();
+
+      try {
+        const artStyle = document.getElementById('artStyle').value;
+        const styleIntensity = document.getElementById('styleIntensity').value;
+        const aspectRatio = document.getElementById('aspectRatio').value;
+        
+        const images = [];
+        
+        // Generate only 1 image as per requirement
+        updateProgress(20);
+        const description = await analyzeAndDescribeImage(uploadedImageBase64, artStyle, styleIntensity);
+        updateProgress(60);
+        
+        if (description) {
+          const imageUrl = await generateStyledImage(description, aspectRatio);
+          if (imageUrl) {
+            images.push({
+              url: imageUrl,
+              prompt: description,
+              timestamp: new Date().toISOString()
+            });
+          }
+        }
+
+        updateProgress(100);
+        
+        if (images.length > 0) {
+          displayImages(images);
+          showMessage('Successfully generated paper art transformation!', 'success');
+        } else {
+          showMessage('Failed to generate image', 'error');
+        }
+
+      } catch (error) {
+        console.error('Generation failed:', error);
+        showMessage(`Error: ${error.message}`, 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function analyzeAndDescribeImage(imageBase64, artStyle, styleIntensity) {
+      try {
+        /* 
+        TO ADD MORE STYLES: Add new style prompts here in the stylePrompts object
+        Example:
+        watercolor: "watercolor painting style with soft, flowing colors and wet paper effects",
+        sketch: "detailed pencil sketch style with crosshatching and shading techniques",
+        oil: "oil painting style with thick brushstrokes and rich, blended colors",
+        digital: "modern digital art style with clean lines and vibrant digital effects"
+        */
+        
+        const stylePrompts = {
+          paper: {
+            subtle: "subtle paper art style with light newspaper textures and minimal paint splashes",
+            moderate: "expressive paper art style with vibrant black line art on textured newspaper background, enhanced with splashes of bright blue and orange paint",
+            strong: "bold paper art style with strong black line illustrations on heavily textured newspaper collage, dramatic splashes of bright blue and orange paint",
+            extreme: "extreme paper art style with intense black ink illustrations on complex newspaper collage background, explosive splashes of bright blue, orange, and additional vibrant colors"
+          }
+          /* 
+          TO ADD MORE STYLES: Uncomment and add more style objects here
+          watercolor: {
+            subtle: "gentle watercolor style with soft, transparent washes",
+            moderate: "vibrant watercolor style with flowing colors and paper texture",
+            strong: "bold watercolor style with intense pigments and dramatic bleeds",
+            extreme: "explosive watercolor style with wild color splashes and abstract elements"
+          },
+          sketch: {
+            subtle: "light pencil sketch with minimal shading",
+            moderate: "detailed pencil drawing with crosshatching and depth",
+            strong: "bold charcoal sketch with dramatic contrasts",
+            extreme: "intense ink sketch with heavy lines and abstract elements"
+          }
+          */
+        };
+
+        const currentStyle = stylePrompts[artStyle][styleIntensity];
+
+        const requestBody = {
+          contents: [{
+            parts: [
+              {
+                text: `Analyze this image and describe the subject in detail for creating a ${currentStyle}. Focus on:
+                1. The main subject (person, object, scene)
+                2. Key facial features, expressions, and characteristics
+                3. Clothing, accessories, or notable elements
+                4. The overall mood and composition
+
+                Create a detailed description that will be used to generate a ${artStyle} style image. The composition should fuse realism and abstract expressionism.
+
+                Format your response as a single descriptive paragraph suitable for image generation, starting with "A ${styleIntensity} ${artStyle} art style illustration of"`
+              },
+              {
+                inline_data: {
+                  mime_type: "image/jpeg",
+                  data: imageBase64
+                }
+              }
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.9,
+            maxOutputTokens: 200
+          }
+        };
+
+        const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
+        }
+
+        const data = await response.json();
+        const description = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (!description) {
+          throw new Error('No description generated from Gemini API');
+        }
+
+        return description.trim();
+      } catch (error) {
+        console.error('Image analysis failed:', error);
+        throw new Error(`Failed to analyze image: ${error.message}`);
+      }
+    }
+
+    async function generateStyledImage(prompt, aspectRatio) {
+      try {
+        /* 
+        TO SCALE FOR MORE DIMENSIONS: Add new dimension mappings here
+        Format: 'aspect-ratio-name': { width: number, height: number }
+        */
+        const dimensions = {
+          // Mobile Devices
+          '9:16': { width: 1080, height: 1920 },
+          '16:9': { width: 1920, height: 1080 },
+          '9:18': { width: 1080, height: 2160 },
+          
+          // Tablets
+          '3:4': { width: 1536, height: 2048 },
+          '4:3': { width: 2048, height: 1536 },
+          
+          // Desktop/Laptop
+          '16:10': { width: 1920, height: 1200 },
+          '21:9': { width: 2560, height: 1080 },
+          '1:1': { width: 1024, height: 1024 },
+          
+          // 4K Resolutions
+          '16:9-4k': { width: 3840, height: 2160 },
+          '21:9-4k': { width: 5120, height: 2160 },
+          '9:16-4k': { width: 2160, height: 3840 },
+          
+          // Watch & Small Devices
+          '1:1-watch': { width: 312, height: 312 },
+          'watch-round': { width: 360, height: 360 },
+          
+          // Social Media
+          'instagram': { width: 1080, height: 1080 },
+          'instagram-story': { width: 1080, height: 1920 },
+          'youtube-thumb': { width: 1280, height: 720 }
+        };
+
+        const { width, height } = dimensions[aspectRatio] || dimensions['1:1'];
+        
+        // Since Gemini doesn't directly generate images yet, we'll use Pollinations AI
+        // as a high-quality alternative that accepts detailed prompts
+        const encodedPrompt = encodeURIComponent(prompt);
+        const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&seed=${Date.now()}&nologo=true&enhance=true&model=flux`;
+        
+        // Validate the image loads successfully
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => resolve(url);
+          img.onerror = () => reject(new Error('Failed to generate styled image'));
+          img.src = url;
+        });
+        
+      } catch (error) {
+        console.error('Image generation failed:', error);
+        throw new Error(`Failed to generate styled image: ${error.message}`);
+      }
+    }
+
+    function displayImages(images) {
+      const gallery = document.getElementById('imageGallery');
+      
+      images.forEach((image, index) => {
+        const imageCard = document.createElement('div');
+        imageCard.className = 'image-card';
+        imageCard.innerHTML = `
+          <img src="${image.url}" alt="Paper art transformation" loading="lazy">
+          <div class="image-info">
+            <div class="image-prompt">${image.prompt.substring(0, 100)}...</div>
+            <div class="image-actions">
+              <button class="action-btn download-btn" onclick="downloadImage('${image.url}', ${index})">
+                Download
+              </button>
+              <button class="action-btn share-btn" onclick="shareImage('${image.url}')">
+                Share
+              </button>
+            </div>
+          </div>
+        `;
+        gallery.appendChild(imageCard);
+      });
+
+      generatedImages.push(...images);
+    }
+
+    async function downloadImage(url, index) {
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `paper-art-${index + 1}-${Date.now()}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        URL.revokeObjectURL(downloadUrl);
+      } catch (error) {
+        showMessage('Failed to download image', 'error');
+      }
+    }
+
+    async function shareImage(url) {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'Paper Art Transformation',
+            url: url
+          });
+        } catch (error) {
+          copyToClipboard(url);
+        }
+      } else {
+        copyToClipboard(url);
+      }
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showMessage('Image URL copied to clipboard!', 'success');
+      });
+    }
+
+    function openImageInNewTab(url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+
+    function setLoading(loading) {
+      const loadingDiv = document.getElementById('loading');
+      const generateBtn = document.getElementById('generateBtn');
+      
+      if (loading) {
+        loadingDiv.style.display = 'block';
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'Transforming...';
+      } else {
+        loadingDiv.style.display = 'none';
+        generateBtn.disabled = false;
+        generateBtn.textContent = 'Transform to Paper Art';
+        updateProgress(0);
+      }
+    }
+
+    function updateProgress(percent) {
+      const progressFill = document.getElementById('progressFill');
+      progressFill.style.width = percent + '%';
+      
+      const loadingText = document.getElementById('loadingText');
+      if (percent < 40) {
+        loadingText.textContent = 'Analyzing your image with Gemini AI...';
+      } else if (percent < 80) {
+        loadingText.textContent = 'Generating paper art transformation...';
+      } else {
+        loadingText.textContent = 'Finalizing your artwork...';
+      }
+    }
+
+    function showMessage(message, type) {
+      const container = document.getElementById('messageContainer');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
+      messageDiv.textContent = message;
+      container.appendChild(messageDiv);
+      
+      setTimeout(() => {
+        if (messageDiv.parentNode) {
+          messageDiv.parentNode.removeChild(messageDiv);
+        }
+      }, 5000);
+    }
+
+    function clearMessages() {
+      document.getElementById('messageContainer').innerHTML = '';
+      document.getElementById('imageGallery').innerHTML = '';
+    }
+  </script>
+</body>
+</html>
