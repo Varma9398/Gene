@@ -14,6 +14,7 @@
     }
 
     .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; position: relative; }
+    
 
     /* Header */
     header {
@@ -34,6 +35,38 @@
       box-shadow: 0 8px 25px rgba(44,62,80,0.08);
     }
     .btn:hover { transform: translateY(-1px); }
+
+    /* Credit Display */
+    .credit-display {
+      background: linear-gradient(135deg, #27ae60, #2ecc71);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+    }
+
+    .credit-display.low-credits {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+    }
+
+    .credit-display.no-credits {
+      background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+      box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3);
+    }
+
+    .credit-icon {
+      width: 16px;
+      height: 16px;
+      background: currentColor;
+      border-radius: 50%;
+      display: inline-block;
+    }
 
     /* Floating background elements */
     .floating-element {
@@ -77,6 +110,58 @@
       font-size: 16px;
     }
 
+    /* Credit Info Section */
+    .credit-info {
+      background: rgba(255,255,255,0.95);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+      backdrop-filter: blur(10px);
+      border-left: 4px solid #27ae60;
+    }
+
+    .credit-info.no-credits {
+      border-left-color: #e74c3c;
+      background: linear-gradient(135deg, rgba(231, 76, 60, 0.05), rgba(192, 57, 43, 0.05));
+    }
+
+    .credit-stats {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .credit-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .credit-number {
+      font-size: 24px;
+      font-weight: 800;
+      color: #2c3e50;
+    }
+
+    .credit-label {
+      font-size: 12px;
+      color: #6f7a83;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .reset-timer {
+      font-size: 14px;
+      color: #6f7a83;
+      text-align: center;
+      margin-top: 10px;
+    }
+
     /* Generator Section */
     .generator-section {
       background: rgba(255,255,255,0.95);
@@ -85,6 +170,11 @@
       margin-bottom: 30px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.07);
       backdrop-filter: blur(10px);
+    }
+
+    .generator-section.disabled {
+      opacity: 0.6;
+      pointer-events: none;
     }
 
     /* API Configuration */
@@ -200,6 +290,7 @@
     .generate-btn:disabled {
       opacity: 0.6;
       cursor: not-allowed;
+      background: #95a5a6;
     }
 
     /* Loading */
@@ -260,6 +351,37 @@
       border-radius: 10px;
       margin: 20px 0;
       border-left: 4px solid #27ae60;
+    }
+
+    /* No Credits Message */
+    .no-credits-message {
+      background: linear-gradient(135deg, #fff5f5, #fed7d7);
+      border: 2px solid #feb2b2;
+      border-radius: 15px;
+      padding: 25px;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .no-credits-message h3 {
+      color: #e53e3e;
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+
+    .no-credits-message p {
+      color: #744210;
+      margin-bottom: 15px;
+      line-height: 1.5;
+    }
+
+    .no-credits-message .timer {
+      background: #e53e3e;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      display: inline-block;
     }
 
     /* Gallery */
@@ -368,6 +490,10 @@
       .image-gallery {
         grid-template-columns: 1fr;
       }
+
+      .credit-stats {
+        justify-content: center;
+      }
     }
   </style>
 </head>
@@ -383,6 +509,10 @@
       <nav>
         <a class="logo" href="index.html">cloud</a>
         <div class="nav-buttons">
+          <div class="credit-display" id="creditDisplay">
+            <span class="credit-icon"></span>
+            <span id="creditText">10 Credits</span>
+          </div>
           <button class="btn btn-outline" onclick="window.location.href='index.html'">Back to Home</button>
           <button class="btn btn-solid">Account</button>
         </div>
@@ -398,7 +528,36 @@
         <p>Transform your photos into expressive paper art style</p>
       </div>
 
-      <div class="generator-section">
+      <!-- Credit Information -->
+      <div class="credit-info" id="creditInfo">
+        <div class="credit-stats">
+          <div class="credit-item">
+            <div class="credit-number" id="creditsRemaining">10</div>
+            <div class="credit-label">Credits Remaining</div>
+          </div>
+          <div class="credit-item">
+            <div class="credit-number" id="creditsUsed">0</div>
+            <div class="credit-label">Used Today</div>
+          </div>
+          <div class="credit-item">
+            <div class="credit-number">10</div>
+            <div class="credit-label">Daily Limit</div>
+          </div>
+        </div>
+        <div class="reset-timer" id="resetTimer">
+          Credits reset in: <strong id="timeUntilReset">--:--:--</strong>
+        </div>
+      </div>
+
+      <!-- No Credits Message -->
+      <div class="no-credits-message" id="noCreditsMessage" style="display: none;">
+        <h3>🎨 You've used all your daily credits!</h3>
+        <p>You've generated <strong>10 amazing artworks</strong> today. Your credits will reset in:</p>
+        <div class="timer" id="noCreditsTimer">--:--:--</div>
+        <p style="margin-top: 15px; font-size: 14px;">Come back tomorrow for 10 fresh credits to create more paper art masterpieces!</p>
+      </div>
+
+      <div class="generator-section" id="generatorSection">
         <div class="api-section">
           <h3>
             <span class="status-indicator"></span>
@@ -420,14 +579,6 @@
             <label for="artStyle">Art Style:</label>
             <select id="artStyle">
               <option value="paper" selected>Paper Art Style</option>
-              <!-- 
-              TO ADD MORE STYLES: Add new options here
-              Example:
-              <option value="watercolor">Watercolor Style</option>
-              <option value="sketch">Pencil Sketch Style</option>
-              <option value="oil">Oil Painting Style</option>
-              <option value="digital">Digital Art Style</option>
-              -->
             </select>
           </div>
 
@@ -476,7 +627,7 @@
         </div>
 
         <button class="generate-btn" onclick="generateImages()" id="generateBtn">
-          Transform to Paper Art
+          Transform to Paper Art (1 Credit)
         </button>
 
         <div class="loading" id="loading">
@@ -512,10 +663,144 @@
     let uploadedImageBase64 = null;
     let generatedImages = [];
 
+    // Credit System Configuration
+    const DAILY_CREDIT_LIMIT = 10;
+    const CREDIT_COST_PER_IMAGE = 1;
+
     // Initialize the application
     document.addEventListener('DOMContentLoaded', function() {
       setupImageUpload();
+      initializeCreditSystem();
+      updateCreditDisplay();
+      startCreditTimer();
     });
+
+    // Credit System Functions
+    function initializeCreditSystem() {
+      const today = new Date().toDateString();
+      const storedData = JSON.parse(localStorage.getItem('paperArtCredits') || '{}');
+      
+      // Reset credits if it's a new day
+      if (storedData.date !== today) {
+        const newData = {
+          date: today,
+          creditsUsed: 0,
+          creditsRemaining: DAILY_CREDIT_LIMIT
+        };
+        localStorage.setItem('paperArtCredits', JSON.stringify(newData));
+      }
+    }
+
+    function getCreditData() {
+      return JSON.parse(localStorage.getItem('paperArtCredits') || '{}');
+    }
+
+    function updateCreditData(creditsUsed) {
+      const today = new Date().toDateString();
+      const data = {
+        date: today,
+        creditsUsed: creditsUsed,
+        creditsRemaining: DAILY_CREDIT_LIMIT - creditsUsed
+      };
+      localStorage.setItem('paperArtCredits', JSON.stringify(data));
+    }
+
+    function hasCreditsRemaining() {
+      const data = getCreditData();
+      return data.creditsRemaining > 0;
+    }
+
+    function deductCredit() {
+      const data = getCreditData();
+      const newCreditsUsed = data.creditsUsed + CREDIT_COST_PER_IMAGE;
+      updateCreditData(newCreditsUsed);
+      updateCreditDisplay();
+    }
+
+    function updateCreditDisplay() {
+      const data = getCreditData();
+      const creditsRemaining = data.creditsRemaining || DAILY_CREDIT_LIMIT;
+      const creditsUsed = data.creditsUsed || 0;
+
+      // Update header credit display
+      const creditDisplay = document.getElementById('creditDisplay');
+      const creditText = document.getElementById('creditText');
+      
+      creditText.textContent = `${creditsRemaining} Credits`;
+      
+      // Update styling based on credit level
+      creditDisplay.className = 'credit-display';
+      if (creditsRemaining === 0) {
+        creditDisplay.classList.add('no-credits');
+      } else if (creditsRemaining <= 3) {
+        creditDisplay.classList.add('low-credits');
+      }
+
+      // Update credit info section
+      document.getElementById('creditsRemaining').textContent = creditsRemaining;
+      document.getElementById('creditsUsed').textContent = creditsUsed;
+
+      // Update credit info styling
+      const creditInfo = document.getElementById('creditInfo');
+      creditInfo.className = 'credit-info';
+      if (creditsRemaining === 0) {
+        creditInfo.classList.add('no-credits');
+      }
+
+      // Show/hide no credits message and disable/enable generator
+      const noCreditsMessage = document.getElementById('noCreditsMessage');
+      const generatorSection = document.getElementById('generatorSection');
+      const generateBtn = document.getElementById('generateBtn');
+
+      if (creditsRemaining === 0) {
+        noCreditsMessage.style.display = 'block';
+        generatorSection.classList.add('disabled');
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'No Credits Remaining';
+      } else {
+        noCreditsMessage.style.display = 'none';
+        generatorSection.classList.remove('disabled');
+        generateBtn.disabled = false;
+        generateBtn.textContent = `Transform to Paper Art (${CREDIT_COST_PER_IMAGE} Credit)`;
+      }
+    }
+
+    function getTimeUntilReset() {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      
+      const diff = tomorrow - now;
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      return {
+        hours: hours.toString().padStart(2, '0'),
+        minutes: minutes.toString().padStart(2, '0'),
+        seconds: seconds.toString().padStart(2, '0'),
+        total: diff
+      };
+    }
+
+    function startCreditTimer() {
+      function updateTimer() {
+        const timeLeft = getTimeUntilReset();
+        const timeString = `${timeLeft.hours}:${timeLeft.minutes}:${timeLeft.seconds}`;
+        
+        document.getElementById('timeUntilReset').textContent = timeString;
+        document.getElementById('noCreditsTimer').textContent = timeString;
+        
+        // Check if we've hit midnight and need to reset
+        if (timeLeft.total <= 0) {
+          location.reload(); // Refresh to initialize new day
+        }
+      }
+      
+      updateTimer();
+      setInterval(updateTimer, 1000);
+    }
 
     function setupImageUpload() {
       const imageUpload = document.getElementById('imageUpload');
@@ -564,12 +849,18 @@
     }
 
     async function generateImages() {
+      // Check credits before proceeding
+      if (!hasCreditsRemaining()) {
+        showMessage("You've used all your daily credits. Come back tomorrow for more!", 'error');
+        return;
+      }
+
       if (!uploadedImageData || !uploadedImageBase64) {
         showMessage('Please upload an image first', 'error');
         return;
       }
 
-      if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
+      if (!GEMINI_API_KEY || GEMINI_API_KEY === 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx') {
         showMessage('Please configure your Gemini API key in the code', 'error');
         return;
       }
@@ -603,6 +894,8 @@
         updateProgress(100);
         
         if (images.length > 0) {
+          // Deduct credit only after successful generation
+          deductCredit();
           displayImages(images);
           showMessage('Successfully generated paper art transformation!', 'success');
         } else {
@@ -619,15 +912,6 @@
 
     async function analyzeAndDescribeImage(imageBase64, artStyle, styleIntensity) {
       try {
-        /* 
-        TO ADD MORE STYLES: Add new style prompts here in the stylePrompts object
-        Example:
-        watercolor: "watercolor painting style with soft, flowing colors and wet paper effects",
-        sketch: "detailed pencil sketch style with crosshatching and shading techniques",
-        oil: "oil painting style with thick brushstrokes and rich, blended colors",
-        digital: "modern digital art style with clean lines and vibrant digital effects"
-        */
-        
         const stylePrompts = {
           paper: {
             subtle: "subtle paper art style with light newspaper textures and minimal paint splashes",
@@ -635,21 +919,6 @@
             strong: "bold paper art style with strong black line illustrations on heavily textured newspaper collage, dramatic splashes of bright blue and orange paint",
             extreme: "extreme paper art style with intense black ink illustrations on complex newspaper collage background, explosive splashes of bright blue, orange, and additional vibrant colors"
           }
-          /* 
-          TO ADD MORE STYLES: Uncomment and add more style objects here
-          watercolor: {
-            subtle: "gentle watercolor style with soft, transparent washes",
-            moderate: "vibrant watercolor style with flowing colors and paper texture",
-            strong: "bold watercolor style with intense pigments and dramatic bleeds",
-            extreme: "explosive watercolor style with wild color splashes and abstract elements"
-          },
-          sketch: {
-            subtle: "light pencil sketch with minimal shading",
-            moderate: "detailed pencil drawing with crosshatching and depth",
-            strong: "bold charcoal sketch with dramatic contrasts",
-            extreme: "intense ink sketch with heavy lines and abstract elements"
-          }
-          */
         };
 
         const currentStyle = stylePrompts[artStyle][styleIntensity];
@@ -713,10 +982,6 @@
 
     async function generateStyledImage(prompt, aspectRatio) {
       try {
-        /* 
-        TO SCALE FOR MORE DIMENSIONS: Add new dimension mappings here
-        Format: 'aspect-ratio-name': { width: number, height: number }
-        */
         const dimensions = {
           // Mobile Devices
           '9:16': { width: 1080, height: 1920 },
@@ -849,8 +1114,14 @@
         generateBtn.textContent = 'Transforming...';
       } else {
         loadingDiv.style.display = 'none';
-        generateBtn.disabled = false;
-        generateBtn.textContent = 'Transform to Paper Art';
+        // Only re-enable if credits are available
+        if (hasCreditsRemaining()) {
+          generateBtn.disabled = false;
+          generateBtn.textContent = `Transform to Paper Art (${CREDIT_COST_PER_IMAGE} Credit)`;
+        } else {
+          generateBtn.disabled = true;
+          generateBtn.textContent = 'No Credits Remaining';
+        }
         updateProgress(0);
       }
     }
